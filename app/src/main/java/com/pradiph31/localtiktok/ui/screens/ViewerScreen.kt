@@ -58,7 +58,7 @@ fun ViewerScreen(
             VerticalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
-                beyondViewportPageCount = 1
+                beyondViewportPageCount = 0
             ) { page ->
                 val item = likedMedia[page]
                 val isVisible = pagerState.currentPage == page

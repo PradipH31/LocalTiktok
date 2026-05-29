@@ -70,7 +70,7 @@ fun FeedScreen(
             VerticalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
-                beyondViewportPageCount = 1
+                beyondViewportPageCount = 0
             ) { page ->
                 val item = mediaItems[page]
                 val isVisible = pagerState.currentPage == page
