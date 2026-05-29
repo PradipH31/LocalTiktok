@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -36,6 +37,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.pradiph31.localtiktok.ui.screens.BrowseScreen
 import com.pradiph31.localtiktok.ui.screens.FeedScreen
 import com.pradiph31.localtiktok.ui.screens.HiddenFilesScreen
 import com.pradiph31.localtiktok.ui.screens.IgnoredFoldersScreen
@@ -48,10 +50,11 @@ import com.pradiph31.localtiktok.viewmodel.MainViewModel
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     data object Home : Screen("home", "Home", Icons.Filled.Home)
     data object Liked : Screen("liked", "Liked", Icons.Filled.Favorite)
+    data object Browse : Screen("browse", "Browse", Icons.Filled.FolderOpen)
     data object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
 }
 
-val bottomNavItems = listOf(Screen.Home, Screen.Liked, Screen.Settings)
+val bottomNavItems = listOf(Screen.Home, Screen.Liked, Screen.Browse, Screen.Settings)
 
 class MainActivity : ComponentActivity() {
 
@@ -165,6 +168,9 @@ fun MainApp(viewModel: MainViewModel) {
                     onNavigateToHiddenFiles = { navController.navigate("hidden_files") },
                     onNavigateToIgnoredFolders = { navController.navigate("ignored_folders") }
                 )
+            }
+            composable(Screen.Browse.route) {
+                BrowseScreen(viewModel = viewModel)
             }
             composable("hidden_files") {
                 HiddenFilesScreen(

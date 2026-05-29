@@ -147,6 +147,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return _likedItems.value.contains(item.uniqueKey)
     }
 
+    fun toggleLikeByPath(path: String) {
+        viewModelScope.launch {
+            val current = _likedItems.value.toMutableSet()
+            if (current.contains(path)) {
+                current.remove(path)
+            } else {
+                current.add(path)
+            }
+            settingsRepository.setLikedItems(current)
+            _likedItems.value = current
+        }
+    }
+
     fun ignoreFile(item: MediaItem) {
         viewModelScope.launch {
             val current = _ignoredFiles.value.toMutableSet()

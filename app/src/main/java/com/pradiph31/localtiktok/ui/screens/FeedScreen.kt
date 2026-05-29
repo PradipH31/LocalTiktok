@@ -13,7 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -150,7 +150,7 @@ fun FeedScreen(
                             onClick = { viewModel.reshuffle() }
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Refresh,
+                                imageVector = Icons.Filled.Shuffle,
                                 contentDescription = "Shuffle",
                                 tint = Color.White.copy(alpha = 0.8f),
                                 modifier = Modifier.size(28.dp)
