@@ -1,6 +1,7 @@
 package com.pradiph31.localtiktok.viewmodel
 
 import android.app.Application
+import android.os.Environment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.pradiph31.localtiktok.data.ContentMode
@@ -8,6 +9,7 @@ import com.pradiph31.localtiktok.data.FolderInfo
 import com.pradiph31.localtiktok.data.MediaItem
 import com.pradiph31.localtiktok.data.MediaRepository
 import com.pradiph31.localtiktok.data.SettingsRepository
+import com.pradiph31.localtiktok.ui.screens.SortOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +47,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    // Browse screen state - persisted across navigation
+    private val _browsePath = MutableStateFlow(Environment.getExternalStorageDirectory().absolutePath)
+    val browsePath: StateFlow<String> = _browsePath.asStateFlow()
+
+    private val _browseSortOption = MutableStateFlow(SortOption.NAME_ASC)
+    val browseSortOption: StateFlow<SortOption> = _browseSortOption.asStateFlow()
+
+    fun setBrowsePath(path: String) {
+        _browsePath.value = path
+    }
+
+    fun setBrowseSortOption(option: SortOption) {
+        _browseSortOption.value = option
+    }
 
     init {
         viewModelScope.launch {

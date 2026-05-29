@@ -54,12 +54,22 @@ fun LikedScreen(
     val likedItems by viewModel.likedItems.collectAsState()
 
     val likedMedia = allMediaItems.filter { likedItems.contains(it.uniqueKey) }
+    val videoCount = likedMedia.count { it is MediaItem.Video }
+    val photoCount = likedMedia.count { it is MediaItem.PhotoAlbum }
+    val totalCount = likedMedia.size
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Liked")
+                    Column {
+                        Text("Liked")
+                        Text(
+                            text = "$totalCount total · $videoCount videos · $photoCount albums",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             )
         }

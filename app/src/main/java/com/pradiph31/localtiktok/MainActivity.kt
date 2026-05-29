@@ -37,6 +37,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.pradiph31.localtiktok.ui.screens.BrowsePreviewScreen
 import com.pradiph31.localtiktok.ui.screens.BrowseScreen
 import com.pradiph31.localtiktok.ui.screens.FeedScreen
 import com.pradiph31.localtiktok.ui.screens.HiddenFilesScreen
@@ -170,7 +171,12 @@ fun MainApp(viewModel: MainViewModel) {
                 )
             }
             composable(Screen.Browse.route) {
-                BrowseScreen(viewModel = viewModel)
+                BrowseScreen(
+                    viewModel = viewModel,
+                    onOpenFile = { filePath ->
+                        navController.navigate("browse_preview/${Uri.encode(filePath)}")
+                    }
+                )
             }
             composable("hidden_files") {
                 HiddenFilesScreen(
@@ -189,6 +195,14 @@ fun MainApp(viewModel: MainViewModel) {
                 ViewerScreen(
                     viewModel = viewModel,
                     itemKey = itemKey,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("browse_preview/{filePath}") { backStackEntry ->
+                val filePath = Uri.decode(backStackEntry.arguments?.getString("filePath") ?: "")
+                BrowsePreviewScreen(
+                    viewModel = viewModel,
+                    filePath = filePath,
                     onBack = { navController.popBackStack() }
                 )
             }

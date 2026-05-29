@@ -77,11 +77,11 @@ enum class SortOption(val label: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BrowseScreen(viewModel: MainViewModel) {
+fun BrowseScreen(viewModel: MainViewModel, onOpenFile: (String) -> Unit = {}) {
     val rootPath = Environment.getExternalStorageDirectory().absolutePath
-    var currentPath by remember { mutableStateOf(rootPath) }
+    val currentPath by viewModel.browsePath.collectAsState()
+    val sortOption by viewModel.browseSortOption.collectAsState()
     var items by remember { mutableStateOf<List<BrowseItem>>(emptyList()) }
-    var sortOption by remember { mutableStateOf(SortOption.NAME_ASC) }
     var showSortMenu by remember { mutableStateOf(false) }
     val likedItems by viewModel.likedItems.collectAsState()
     val context = LocalContext.current
@@ -125,7 +125,7 @@ fun BrowseScreen(viewModel: MainViewModel) {
                 navigationIcon = {
                     if (currentPath != rootPath) {
                         IconButton(onClick = {
-                            currentPath = File(currentPath).parent ?: rootPath
+                            viewModel.setBrowsePath(File(currentPath).parent ?: rootPath)
                         }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
@@ -158,7 +158,7 @@ fun BrowseScreen(viewModel: MainViewModel) {
                                         )
                                     },
                                     onClick = {
-                                        sortOption = option
+                                        viewModel.setBrowseSortOption(option)
                                         showSortMenu = false
                                     }
                                 )
@@ -194,7 +194,8 @@ fun BrowseScreen(viewModel: MainViewModel) {
                     BrowseItemRow(
                         item = item,
                         isLiked = likedItems.contains(item.path),
-                        onNavigate = { currentPath = item.path },
+                        onNavigate = { viewModel.setBrowsePath(item.path) },
+                        onOpenFile = { onOpenFile(item.path) },
                         onToggleLike = { viewModel.toggleLikeByPath(item.path) }
                     )
                 }
@@ -235,6 +236,7 @@ private fun BrowseItemRow(
     item: BrowseItem,
     isLiked: Boolean,
     onNavigate: () -> Unit,
+    onOpenFile: () -> Unit,
     onToggleLike: () -> Unit
 ) {
     val context = LocalContext.current
@@ -245,8 +247,9 @@ private fun BrowseItemRow(
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
             .clickable {
-                if (item.isDirectory) {
-                    onNavigate()
+                when {
+                    item.isDirectory -> onNavigate()
+                    item.isVideo || item.isImage -> onOpenFile()
                 }
             }
             .padding(12.dp),
