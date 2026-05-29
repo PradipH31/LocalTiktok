@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,6 +34,7 @@ import com.pradiph31.localtiktok.data.MediaItem
 import com.pradiph31.localtiktok.ui.components.PhotoAlbumViewer
 import com.pradiph31.localtiktok.ui.components.VideoPlayer
 import com.pradiph31.localtiktok.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun FeedScreen(
@@ -63,6 +65,7 @@ fun FeedScreen(
             )
         } else {
             val pagerState = rememberPagerState(pageCount = { mediaItems.size })
+            val coroutineScope = rememberCoroutineScope()
 
             VerticalPager(
                 state = pagerState,
@@ -119,7 +122,18 @@ fun FeedScreen(
                     // Hide/Ignore button
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         IconButton(
-                            onClick = { viewModel.ignoreFile(currentItem) }
+                            onClick = {
+                                coroutineScope.launch {
+                                    val currentPage = pagerState.currentPage
+                                    // Scroll to next or previous before removing
+                                    if (currentPage < mediaItems.size - 1) {
+                                        pagerState.scrollToPage(currentPage + 1)
+                                    } else if (currentPage > 0) {
+                                        pagerState.scrollToPage(currentPage - 1)
+                                    }
+                                    viewModel.ignoreFile(currentItem)
+                                }
+                            }
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Delete,
