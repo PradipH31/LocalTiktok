@@ -36,6 +36,9 @@ fun IgnoredFoldersScreen(
     LaunchedEffect(Unit) {
         viewModel.loadFolders()
     }
+
+    val sortedFolders = allFolders.sortedByDescending { ignoredFolders.contains(it.path) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -62,7 +65,7 @@ fun IgnoredFoldersScreen(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-            items(allFolders) { folder ->
+            items(sortedFolders) { folder ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
