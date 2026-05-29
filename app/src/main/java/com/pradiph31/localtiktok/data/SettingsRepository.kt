@@ -15,10 +15,20 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 class SettingsRepository(private val context: Context) {
 
     private val IGNORED_FOLDERS_KEY = stringSetPreferencesKey("ignored_folders")
+    private val IGNORED_FILES_KEY = stringSetPreferencesKey("ignored_files")
+    private val LIKED_ITEMS_KEY = stringSetPreferencesKey("liked_items")
     private val CONTENT_MODE_KEY = stringPreferencesKey("content_mode")
 
     val ignoredFolders: Flow<Set<String>> = context.dataStore.data.map { preferences ->
         preferences[IGNORED_FOLDERS_KEY] ?: emptySet()
+    }
+
+    val ignoredFiles: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[IGNORED_FILES_KEY] ?: emptySet()
+    }
+
+    val likedItems: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[LIKED_ITEMS_KEY] ?: emptySet()
     }
 
     val contentMode: Flow<ContentMode> = context.dataStore.data.map { preferences ->
@@ -36,10 +46,21 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    suspend fun setIgnoredFiles(files: Set<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[IGNORED_FILES_KEY] = files
+        }
+    }
+
+    suspend fun setLikedItems(items: Set<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[LIKED_ITEMS_KEY] = items
+        }
+    }
+
     suspend fun setContentMode(mode: ContentMode) {
         context.dataStore.edit { preferences ->
             preferences[CONTENT_MODE_KEY] = mode.name
         }
     }
 }
-

@@ -30,6 +30,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _ignoredFolders = MutableStateFlow<Set<String>>(emptySet())
     val ignoredFolders: StateFlow<Set<String>> = _ignoredFolders.asStateFlow()
 
+    private val _ignoredFiles = MutableStateFlow<Set<String>>(emptySet())
+    val ignoredFiles: StateFlow<Set<String>> = _ignoredFiles.asStateFlow()
+
+    private val _likedItems = MutableStateFlow<Set<String>>(emptySet())
+    val likedItems: StateFlow<Set<String>> = _likedItems.asStateFlow()
+
     private val _allFolders = MutableStateFlow<List<FolderInfo>>(emptyList())
     val allFolders: StateFlow<List<FolderInfo>> = _allFolders.asStateFlow()
 
@@ -47,6 +53,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _ignoredFolders.value = folders
             }
         }
+        viewModelScope.launch {
+            settingsRepository.ignoredFiles.collect { files ->
+                _ignoredFiles.value = files
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.likedItems.collect { items ->
+                _likedItems.value = items
+            }
+        }
     }
 
     private var hasLoaded = false
@@ -57,17 +73,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _isLoading.value = true
             val ignored = settingsRepository.ignoredFolders.first()
+            val ignoredFiles = settingsRepository.ignoredFiles.first()
             val mode = settingsRepository.contentMode.first()
             _ignoredFolders.value = ignored
+            _ignoredFiles.value = ignoredFiles
             _contentMode.value = mode
 
             val items = withContext(Dispatchers.IO) {
                 when (mode) {
-                    ContentMode.VIDEOS_ONLY -> mediaRepository.getVideos(ignored)
-                    ContentMode.PHOTOS_ONLY -> mediaRepository.getPhotoAlbums(ignored)
+                    ContentMode.VIDEOS_ONLY -> mediaRepository.getVideos(ignored, ignoredFiles)
+                    ContentMode.PHOTOS_ONLY -> mediaRepository.getPhotoAlbums(ignored, ignoredFiles)
                     ContentMode.MIXED -> {
-                        val videos = mediaRepository.getVideos(ignored)
-                        val albums = mediaRepository.getPhotoAlbums(ignored)
+                        val videos = mediaRepository.getVideos(ignored, ignoredFiles)
+                        val albums = mediaRepository.getPhotoAlbums(ignored, ignoredFiles)
                         videos + albums
                     }
                 }
@@ -107,8 +125,48 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toggleLike(item: MediaItem) {
+        viewModelScope.launch {
+            val current = _likedItems.value.toMutableSet()
+            if (current.contains(item.uniqueKey)) {
+                current.remove(item.uniqueKey)
+            } else {
+                current.add(item.uniqueKey)
+            }
+            settingsRepository.setLikedItems(current)
+            _likedItems.value = current
+        }
+    }
+
+    fun isLiked(item: MediaItem): Boolean {
+        return _likedItems.value.contains(item.uniqueKey)
+    }
+
+    fun ignoreFile(item: MediaItem) {
+        viewModelScope.launch {
+            val current = _ignoredFiles.value.toMutableSet()
+            current.add(item.uniqueKey)
+            settingsRepository.setIgnoredFiles(current)
+            _ignoredFiles.value = current
+            // Remove from current feed
+            _mediaItems.value = _mediaItems.value.filter { it.uniqueKey != item.uniqueKey }
+        }
+    }
+
+    fun unignoreFile(filePath: String) {
+        viewModelScope.launch {
+            val current = _ignoredFiles.value.toMutableSet()
+            current.remove(filePath)
+            settingsRepository.setIgnoredFiles(current)
+            _ignoredFiles.value = current
+        }
+    }
+
+    fun getLikedMediaItems(): List<MediaItem> {
+        return _mediaItems.value.filter { _likedItems.value.contains(it.uniqueKey) }
+    }
+
     fun reshuffle() {
         _mediaItems.value = _mediaItems.value.shuffled()
     }
 }
-

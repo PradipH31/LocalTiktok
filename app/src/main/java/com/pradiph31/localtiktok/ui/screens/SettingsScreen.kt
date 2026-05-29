@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -40,6 +40,7 @@ fun SettingsScreen(
 ) {
     val contentMode by viewModel.contentMode.collectAsState()
     val ignoredFolders by viewModel.ignoredFolders.collectAsState()
+    val ignoredFiles by viewModel.ignoredFiles.collectAsState()
     val allFolders by viewModel.allFolders.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -49,98 +50,140 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+                title = { Text("Settings") }
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
         ) {
             // Content Mode Section
-            Text(
-                text = "Content Mode",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
+            item {
+                Text(
+                    text = "Content Mode",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                FilterChip(
-                    selected = contentMode == ContentMode.MIXED,
-                    onClick = { viewModel.setContentMode(ContentMode.MIXED) },
-                    label = { Text("Mixed") },
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                FilterChip(
-                    selected = contentMode == ContentMode.VIDEOS_ONLY,
-                    onClick = { viewModel.setContentMode(ContentMode.VIDEOS_ONLY) },
-                    label = { Text("Videos") },
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                FilterChip(
-                    selected = contentMode == ContentMode.PHOTOS_ONLY,
-                    onClick = { viewModel.setContentMode(ContentMode.PHOTOS_ONLY) },
-                    label = { Text("Photos") }
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilterChip(
+                        selected = contentMode == ContentMode.MIXED,
+                        onClick = { viewModel.setContentMode(ContentMode.MIXED) },
+                        label = { Text("Mixed") },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    FilterChip(
+                        selected = contentMode == ContentMode.VIDEOS_ONLY,
+                        onClick = { viewModel.setContentMode(ContentMode.VIDEOS_ONLY) },
+                        label = { Text("Videos") },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    FilterChip(
+                        selected = contentMode == ContentMode.PHOTOS_ONLY,
+                        onClick = { viewModel.setContentMode(ContentMode.PHOTOS_ONLY) },
+                        label = { Text("Photos") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
+            // Ignored Files Section
+            if (ignoredFiles.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Hidden Files",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                    Text(
+                        text = "Tap X to show the file again in your feed",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
-            // Ignored Folders Section
-            Text(
-                text = "Ignored Folders",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-            Text(
-                text = "Checked folders will be hidden from the feed",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(allFolders) { folder ->
+                items(ignoredFiles.toList()) { filePath ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Checkbox(
-                            checked = ignoredFolders.contains(folder.path),
-                            onCheckedChange = { viewModel.toggleFolderIgnored(folder.path) }
+                        Text(
+                            text = filePath.substringAfterLast("/"),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = folder.name,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = folder.path,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                        IconButton(onClick = { viewModel.unignoreFile(filePath) }) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = "Unhide",
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+            // Ignored Folders Section
+            item {
+                Text(
+                    text = "Ignored Folders",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
+                Text(
+                    text = "Checked folders will be hidden from the feed",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            items(allFolders) { folder ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = ignoredFolders.contains(folder.path),
+                        onCheckedChange = { viewModel.toggleFolderIgnored(folder.path) }
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = folder.name,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = folder.path,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
         }
     }
 }
-

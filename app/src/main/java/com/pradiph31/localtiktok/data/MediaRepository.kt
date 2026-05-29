@@ -6,7 +6,7 @@ import android.provider.MediaStore
 
 class MediaRepository(private val context: Context) {
 
-    fun getVideos(ignoredFolders: Set<String>): List<MediaItem.Video> {
+    fun getVideos(ignoredFolders: Set<String>, ignoredFiles: Set<String> = emptySet()): List<MediaItem.Video> {
         val videos = mutableListOf<MediaItem.Video>()
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
@@ -40,6 +40,7 @@ class MediaRepository(private val context: Context) {
                 val folderPath = data.substringBeforeLast("/")
 
                 if (ignoredFolders.any { folderPath.startsWith(it) }) continue
+                if (ignoredFiles.contains(data)) continue
 
                 val uri = ContentUris.withAppendedId(
                     MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id
@@ -51,7 +52,8 @@ class MediaRepository(private val context: Context) {
                         title = title,
                         duration = duration,
                         folderPath = folderPath,
-                        folderName = bucketName
+                        folderName = bucketName,
+                        filePath = data
                     )
                 )
             }
@@ -59,7 +61,7 @@ class MediaRepository(private val context: Context) {
         return videos
     }
 
-    fun getPhotoAlbums(ignoredFolders: Set<String>): List<MediaItem.PhotoAlbum> {
+    fun getPhotoAlbums(ignoredFolders: Set<String>, ignoredFiles: Set<String> = emptySet()): List<MediaItem.PhotoAlbum> {
         val photosMap = mutableMapOf<String, MutableList<Photo>>()
         val folderNames = mutableMapOf<String, String>()
 
@@ -95,6 +97,7 @@ class MediaRepository(private val context: Context) {
                 val folderPath = data.substringBeforeLast("/")
 
                 if (ignoredFolders.any { folderPath.startsWith(it) }) continue
+                if (ignoredFiles.contains(data)) continue
 
                 val uri = ContentUris.withAppendedId(
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
