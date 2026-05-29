@@ -37,6 +37,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.pradiph31.localtiktok.ui.screens.FeedScreen
+import com.pradiph31.localtiktok.ui.screens.HiddenFilesScreen
+import com.pradiph31.localtiktok.ui.screens.IgnoredFoldersScreen
 import com.pradiph31.localtiktok.ui.screens.LikedScreen
 import com.pradiph31.localtiktok.ui.screens.SettingsScreen
 import com.pradiph31.localtiktok.ui.screens.ViewerScreen
@@ -159,6 +161,19 @@ fun MainApp(viewModel: MainViewModel) {
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(
+                    viewModel = viewModel,
+                    onNavigateToHiddenFiles = { navController.navigate("hidden_files") },
+                    onNavigateToIgnoredFolders = { navController.navigate("ignored_folders") }
+                )
+            }
+            composable("hidden_files") {
+                HiddenFilesScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("ignored_folders") {
+                IgnoredFoldersScreen(
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() }
                 )
