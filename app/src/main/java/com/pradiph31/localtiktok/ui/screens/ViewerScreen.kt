@@ -1,17 +1,23 @@
 package com.pradiph31.localtiktok.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,28 +34,73 @@ fun ViewerScreen(
     onBack: () -> Unit
 ) {
     val mediaItems by viewModel.mediaItems.collectAsState()
-    val item = mediaItems.find { it.uniqueKey == itemKey }
+    val likedItems by viewModel.likedItems.collectAsState()
+
+    val likedMedia = remember(mediaItems, likedItems) {
+        mediaItems.filter { likedItems.contains(it.uniqueKey) }
+    }
+
+    val startIndex = remember(likedMedia, itemKey) {
+        likedMedia.indexOfFirst { it.uniqueKey == itemKey }.coerceAtLeast(0)
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        if (item != null) {
-            when (item) {
-                is MediaItem.Video -> {
-                    VideoPlayer(
-                        videoUri = item.uri,
-                        isVisible = true,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+        if (likedMedia.isNotEmpty()) {
+            val pagerState = rememberPagerState(
+                initialPage = startIndex,
+                pageCount = { likedMedia.size }
+            )
 
-                is MediaItem.PhotoAlbum -> {
-                    PhotoAlbumViewer(
-                        photos = item.photos,
-                        modifier = Modifier.fillMaxSize()
-                    )
+            VerticalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                beyondViewportPageCount = 1
+            ) { page ->
+                val item = likedMedia[page]
+                val isVisible = pagerState.currentPage == page
+
+                when (item) {
+                    is MediaItem.Video -> {
+                        VideoPlayer(
+                            videoUri = item.uri,
+                            isVisible = isVisible,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    is MediaItem.PhotoAlbum -> {
+                        PhotoAlbumViewer(
+                            photos = item.photos,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
+
+            // Unlike button on the right side
+            if (pagerState.currentPage < likedMedia.size) {
+                val currentItem = likedMedia[pagerState.currentPage]
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    IconButton(
+                        onClick = { viewModel.toggleLike(currentItem) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Unlike",
+                            tint = Color.Red,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
         }
@@ -70,4 +121,3 @@ fun ViewerScreen(
         }
     }
 }
-
