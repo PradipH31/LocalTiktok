@@ -24,6 +24,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _mediaItems = MutableStateFlow<List<MediaItem>>(emptyList())
     val mediaItems: StateFlow<List<MediaItem>> = _mediaItems.asStateFlow()
 
+    // All media items (both videos and photos) for liked list - independent of mode
+    private val _allMediaItems = MutableStateFlow<List<MediaItem>>(emptyList())
+    val allMediaItems: StateFlow<List<MediaItem>> = _allMediaItems.asStateFlow()
+
     private val _contentMode = MutableStateFlow(ContentMode.MIXED)
     val contentMode: StateFlow<ContentMode> = _contentMode.asStateFlow()
 
@@ -79,16 +83,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _ignoredFiles.value = ignoredFiles
             _contentMode.value = mode
 
-            val items = withContext(Dispatchers.IO) {
-                when (mode) {
-                    ContentMode.VIDEOS_ONLY -> mediaRepository.getVideos(ignored, ignoredFiles)
-                    ContentMode.PHOTOS_ONLY -> mediaRepository.getPhotoAlbums(ignored, ignoredFiles)
-                    ContentMode.MIXED -> {
-                        val videos = mediaRepository.getVideos(ignored, ignoredFiles)
-                        val albums = mediaRepository.getPhotoAlbums(ignored, ignoredFiles)
-                        videos + albums
-                    }
-                }
+            val allItems = withContext(Dispatchers.IO) {
+                val videos = mediaRepository.getVideos(ignored, ignoredFiles)
+                val albums = mediaRepository.getPhotoAlbums(ignored, ignoredFiles)
+                videos + albums
+            }
+            _allMediaItems.value = allItems
+
+            val items = when (mode) {
+                ContentMode.VIDEOS_ONLY -> allItems.filterIsInstance<MediaItem.Video>()
+                ContentMode.PHOTOS_ONLY -> allItems.filterIsInstance<MediaItem.PhotoAlbum>()
+                ContentMode.MIXED -> allItems
             }
             _mediaItems.value = items.shuffled()
             _isLoading.value = false
@@ -148,8 +153,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             current.add(item.uniqueKey)
             settingsRepository.setIgnoredFiles(current)
             _ignoredFiles.value = current
-            // Remove from current feed
+            // Remove from current feed and all items
             _mediaItems.value = _mediaItems.value.filter { it.uniqueKey != item.uniqueKey }
+            _allMediaItems.value = _allMediaItems.value.filter { it.uniqueKey != item.uniqueKey }
         }
     }
 
@@ -160,10 +166,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             settingsRepository.setIgnoredFiles(current)
             _ignoredFiles.value = current
         }
-    }
-
-    fun getLikedMediaItems(): List<MediaItem> {
-        return _mediaItems.value.filter { _likedItems.value.contains(it.uniqueKey) }
     }
 
     fun reshuffle() {

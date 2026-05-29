@@ -50,10 +50,10 @@ fun LikedScreen(
     viewModel: MainViewModel,
     onItemClick: (MediaItem) -> Unit
 ) {
-    val mediaItems by viewModel.mediaItems.collectAsState()
+    val allMediaItems by viewModel.allMediaItems.collectAsState()
     val likedItems by viewModel.likedItems.collectAsState()
 
-    val likedMedia = mediaItems.filter { likedItems.contains(it.uniqueKey) }
+    val likedMedia = allMediaItems.filter { likedItems.contains(it.uniqueKey) }
 
     Scaffold(
         topBar = {

@@ -33,11 +33,11 @@ fun ViewerScreen(
     itemKey: String,
     onBack: () -> Unit
 ) {
-    val mediaItems by viewModel.mediaItems.collectAsState()
+    val allMediaItems by viewModel.allMediaItems.collectAsState()
     val likedItems by viewModel.likedItems.collectAsState()
 
-    val likedMedia = remember(mediaItems, likedItems) {
-        mediaItems.filter { likedItems.contains(it.uniqueKey) }
+    val likedMedia = remember(allMediaItems, likedItems) {
+        allMediaItems.filter { likedItems.contains(it.uniqueKey) }
     }
 
     val startIndex = remember(likedMedia, itemKey) {

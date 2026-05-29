@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +33,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -41,6 +43,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -50,33 +53,35 @@ fun VideoPlayer(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var isPlaying by remember { mutableStateOf(true) }
-    var currentPosition by remember { mutableLongStateOf(0L) }
-    var duration by remember { mutableLongStateOf(0L) }
-    var isSeeking by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isPlaying by remember(videoUri) { mutableStateOf(true) }
+    var currentPosition by remember(videoUri) { mutableLongStateOf(0L) }
+    var duration by remember(videoUri) { mutableLongStateOf(0L) }
+    var isSeeking by remember(videoUri) { mutableStateOf(false) }
 
-    val exoPlayer = remember {
+    val exoPlayer = remember(videoUri) {
         ExoPlayer.Builder(context).build().apply {
             repeatMode = Player.REPEAT_MODE_ONE
             val mediaItem = MediaItem.fromUri(videoUri)
             setMediaItem(mediaItem)
             prepare()
+            playWhenReady = false
         }
     }
 
     // Update position periodically
-    LaunchedEffect(isVisible) {
-        while (isVisible) {
+    LaunchedEffect(videoUri, isVisible) {
+        while (isActive && isVisible) {
             if (!isSeeking) {
                 currentPosition = exoPlayer.currentPosition
                 duration = exoPlayer.duration.coerceAtLeast(0L)
             }
-            delay(200L)
+            delay(250L)
         }
     }
 
     // Handle visibility changes
-    DisposableEffect(isVisible) {
+    LaunchedEffect(videoUri, isVisible) {
         if (isVisible) {
             exoPlayer.playWhenReady = true
             isPlaying = true
@@ -84,11 +89,33 @@ fun VideoPlayer(
             exoPlayer.playWhenReady = false
             isPlaying = false
         }
-        onDispose { }
     }
 
-    DisposableEffect(Unit) {
+    // Handle lifecycle (pause when app goes to background)
+    DisposableEffect(lifecycleOwner, videoUri) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> {
+                    exoPlayer.playWhenReady = false
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    if (isVisible) {
+                        exoPlayer.playWhenReady = isPlaying
+                    }
+                }
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Release player when composable leaves composition
+    DisposableEffect(videoUri) {
+        onDispose {
+            exoPlayer.stop()
             exoPlayer.release()
         }
     }
@@ -117,6 +144,9 @@ fun VideoPlayer(
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
                 }
+            },
+            update = { playerView ->
+                playerView.player = exoPlayer
             },
             modifier = Modifier.fillMaxSize()
         )
