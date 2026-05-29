@@ -1,5 +1,10 @@
 package com.pradiph31.localtiktok.ui.screens
 
+import android.content.ContentUris
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import android.util.Size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,16 +35,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.video.VideoFrameDecoder
 import com.pradiph31.localtiktok.data.MediaItem
 import com.pradiph31.localtiktok.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LikedScreen(
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    onItemClick: (MediaItem) -> Unit
 ) {
     val mediaItems by viewModel.mediaItems.collectAsState()
     val likedItems by viewModel.likedItems.collectAsState()
@@ -70,7 +79,7 @@ fun LikedScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                     Text(
-                        text = "No liked items yet.\nDouble-tap the heart on videos you enjoy!",
+                        text = "No liked items yet.\nTap the heart on videos you enjoy!",
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -89,7 +98,10 @@ fun LikedScreen(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 items(likedMedia) { item ->
-                    LikedItemThumbnail(item = item)
+                    LikedItemThumbnail(
+                        item = item,
+                        onClick = { onItemClick(item) }
+                    )
                 }
             }
         }
@@ -97,16 +109,22 @@ fun LikedScreen(
 }
 
 @Composable
-private fun LikedItemThumbnail(item: MediaItem) {
+private fun LikedItemThumbnail(item: MediaItem, onClick: () -> Unit) {
+    val context = LocalContext.current
+
     Box(
         modifier = Modifier
             .aspectRatio(9f / 16f)
             .background(Color.DarkGray)
+            .clickable(onClick = onClick)
     ) {
         when (item) {
             is MediaItem.Video -> {
                 AsyncImage(
-                    model = item.uri,
+                    model = ImageRequest.Builder(context)
+                        .data(item.uri)
+                        .decoderFactory(VideoFrameDecoder.Factory())
+                        .build(),
                     contentDescription = item.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -117,9 +135,8 @@ private fun LikedItemThumbnail(item: MediaItem) {
                     contentDescription = null,
                     tint = Color.White.copy(alpha = 0.8f),
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(4.dp)
-                        .size(20.dp)
+                        .align(Alignment.Center)
+                        .size(36.dp)
                 )
             }
 
@@ -138,7 +155,7 @@ private fun LikedItemThumbnail(item: MediaItem) {
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
+                        .align(Alignment.TopEnd)
                         .padding(4.dp)
                 )
             }
@@ -150,9 +167,8 @@ private fun LikedItemThumbnail(item: MediaItem) {
             color = Color.White.copy(alpha = 0.8f),
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.BottomStart)
                 .padding(4.dp)
         )
     }
 }
-

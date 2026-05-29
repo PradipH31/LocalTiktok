@@ -2,6 +2,7 @@ package com.pradiph31.localtiktok
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -38,6 +39,7 @@ import androidx.navigation.compose.rememberNavController
 import com.pradiph31.localtiktok.ui.screens.FeedScreen
 import com.pradiph31.localtiktok.ui.screens.LikedScreen
 import com.pradiph31.localtiktok.ui.screens.SettingsScreen
+import com.pradiph31.localtiktok.ui.screens.ViewerScreen
 import com.pradiph31.localtiktok.ui.theme.LocalTiktokTheme
 import com.pradiph31.localtiktok.viewmodel.MainViewModel
 
@@ -148,11 +150,24 @@ fun MainApp(viewModel: MainViewModel) {
                 FeedScreen(viewModel = viewModel)
             }
             composable(Screen.Liked.route) {
-                LikedScreen(viewModel = viewModel)
+                LikedScreen(
+                    viewModel = viewModel,
+                    onItemClick = { item ->
+                        navController.navigate("viewer/${Uri.encode(item.uniqueKey)}")
+                    }
+                )
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("viewer/{itemKey}") { backStackEntry ->
+                val itemKey = Uri.decode(backStackEntry.arguments?.getString("itemKey") ?: "")
+                ViewerScreen(
+                    viewModel = viewModel,
+                    itemKey = itemKey,
                     onBack = { navController.popBackStack() }
                 )
             }
