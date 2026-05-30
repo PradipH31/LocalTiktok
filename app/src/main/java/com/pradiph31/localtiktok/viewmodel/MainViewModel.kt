@@ -48,6 +48,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // Filter: show only unliked items in feed
+    private val _showUnlikedOnly = MutableStateFlow(false)
+    val showUnlikedOnly: StateFlow<Boolean> = _showUnlikedOnly.asStateFlow()
+
+    fun toggleUnlikedFilter() {
+        _showUnlikedOnly.value = !_showUnlikedOnly.value
+    }
+
     // Browse screen state - persisted across navigation
     private val _browsePath = MutableStateFlow(Environment.getExternalStorageDirectory().absolutePath)
     val browsePath: StateFlow<String> = _browsePath.asStateFlow()

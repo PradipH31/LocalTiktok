@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.HeartBroken
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +44,13 @@ fun FeedScreen(
     val mediaItems by viewModel.mediaItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val likedItems by viewModel.likedItems.collectAsState()
+    val showUnlikedOnly by viewModel.showUnlikedOnly.collectAsState()
+
+    val displayItems = if (showUnlikedOnly) {
+        mediaItems.filter { !likedItems.contains(it.uniqueKey) }
+    } else {
+        mediaItems
+    }
 
     Box(
         modifier = Modifier
@@ -54,9 +62,10 @@ fun FeedScreen(
                 modifier = Modifier.align(Alignment.Center),
                 color = Color.White
             )
-        } else if (mediaItems.isEmpty()) {
+        } else if (displayItems.isEmpty()) {
             Text(
-                text = "No media found.\nCheck permissions or adjust filters in settings.",
+                text = if (showUnlikedOnly) "No unliked media found.\nTurn off the filter or unlike some items."
+                       else "No media found.\nCheck permissions or adjust filters in settings.",
                 color = Color.White,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
@@ -64,7 +73,7 @@ fun FeedScreen(
                     .padding(32.dp)
             )
         } else {
-            val pagerState = rememberPagerState(pageCount = { mediaItems.size })
+            val pagerState = rememberPagerState(pageCount = { displayItems.size })
             val coroutineScope = rememberCoroutineScope()
 
             VerticalPager(
@@ -72,7 +81,7 @@ fun FeedScreen(
                 modifier = Modifier.fillMaxSize(),
                 beyondViewportPageCount = 0
             ) { page ->
-                val item = mediaItems[page]
+                val item = displayItems[page]
                 val isVisible = pagerState.currentPage == page
 
                 when (item) {
@@ -94,8 +103,8 @@ fun FeedScreen(
             }
 
             // Right side action buttons (TikTok style)
-            if (mediaItems.isNotEmpty() && pagerState.currentPage < mediaItems.size) {
-                val currentItem = mediaItems[pagerState.currentPage]
+            if (displayItems.isNotEmpty() && pagerState.currentPage < displayItems.size) {
+                val currentItem = displayItems[pagerState.currentPage]
                 val isLiked = likedItems.contains(currentItem.uniqueKey)
 
                 Column(
@@ -126,7 +135,7 @@ fun FeedScreen(
                                 coroutineScope.launch {
                                     val currentPage = pagerState.currentPage
                                     // Scroll to next or previous before removing
-                                    if (currentPage < mediaItems.size - 1) {
+                                    if (currentPage < displayItems.size - 1) {
                                         pagerState.scrollToPage(currentPage + 1)
                                     } else if (currentPage > 0) {
                                         pagerState.scrollToPage(currentPage - 1)
@@ -153,6 +162,20 @@ fun FeedScreen(
                                 imageVector = Icons.Filled.Shuffle,
                                 contentDescription = "Shuffle",
                                 tint = Color.White.copy(alpha = 0.8f),
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    // Unliked only filter button
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        IconButton(
+                            onClick = { viewModel.toggleUnlikedFilter() }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.HeartBroken,
+                                contentDescription = if (showUnlikedOnly) "Show all" else "Show unliked only",
+                                tint = if (showUnlikedOnly) Color(0xFFFF6B6B) else Color.White.copy(alpha = 0.8f),
                                 modifier = Modifier.size(28.dp)
                             )
                         }
