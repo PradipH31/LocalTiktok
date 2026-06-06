@@ -36,6 +36,7 @@ fun BrowsePreviewScreen(
     onBack: () -> Unit
 ) {
     val likedItems by viewModel.likedItems.collectAsState()
+    val isMuted by viewModel.isMuted.collectAsState()
     val isLiked = likedItems.contains(filePath)
     val file = File(filePath)
     val ext = file.extension.lowercase()
@@ -52,6 +53,8 @@ fun BrowsePreviewScreen(
                 VideoPlayer(
                     videoUri = Uri.fromFile(file),
                     isVisible = true,
+                    isMuted = isMuted,
+                    onToggleMute = { viewModel.toggleMute() },
                     modifier = Modifier.fillMaxSize()
                 )
             }

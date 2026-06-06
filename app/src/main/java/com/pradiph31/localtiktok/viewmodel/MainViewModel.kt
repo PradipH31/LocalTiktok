@@ -56,6 +56,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _showUnlikedOnly.value = !_showUnlikedOnly.value
     }
 
+    // Mute state persists across video swipes
+    private val _isMuted = MutableStateFlow(false)
+    val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
+
+    fun toggleMute() {
+        _isMuted.value = !_isMuted.value
+    }
+
     // Browse screen state - persisted across navigation
     private val _browsePath = MutableStateFlow(Environment.getExternalStorageDirectory().absolutePath)
     val browsePath: StateFlow<String> = _browsePath.asStateFlow()

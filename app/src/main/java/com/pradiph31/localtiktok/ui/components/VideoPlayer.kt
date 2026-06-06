@@ -12,9 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -50,6 +54,8 @@ import kotlinx.coroutines.isActive
 fun VideoPlayer(
     videoUri: android.net.Uri,
     isVisible: Boolean,
+    isMuted: Boolean = false,
+    onToggleMute: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -66,7 +72,13 @@ fun VideoPlayer(
             setMediaItem(mediaItem)
             prepare()
             playWhenReady = false
+            volume = if (isMuted) 0f else 1f
         }
+    }
+
+    // Sync mute state with player
+    LaunchedEffect(isMuted) {
+        exoPlayer.volume = if (isMuted) 0f else 1f
     }
 
     // Update position periodically
@@ -160,6 +172,23 @@ fun VideoPlayer(
                 modifier = Modifier
                     .size(72.dp)
                     .padding(8.dp)
+            )
+        }
+
+        // Mute/Unmute button
+        IconButton(
+            onClick = { onToggleMute() },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp)
+                .size(40.dp)
+                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+        ) {
+            Icon(
+                imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                contentDescription = if (isMuted) "Unmute" else "Mute",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
             )
         }
 

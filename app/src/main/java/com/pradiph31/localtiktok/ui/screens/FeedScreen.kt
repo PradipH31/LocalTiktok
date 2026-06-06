@@ -45,6 +45,7 @@ fun FeedScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val likedItems by viewModel.likedItems.collectAsState()
     val showUnlikedOnly by viewModel.showUnlikedOnly.collectAsState()
+    val isMuted by viewModel.isMuted.collectAsState()
 
     val displayItems = if (showUnlikedOnly) {
         mediaItems.filter { !likedItems.contains(it.uniqueKey) }
@@ -89,6 +90,8 @@ fun FeedScreen(
                         VideoPlayer(
                             videoUri = item.uri,
                             isVisible = isVisible,
+                            isMuted = isMuted,
+                            onToggleMute = { viewModel.toggleMute() },
                             modifier = Modifier.fillMaxSize()
                         )
                     }

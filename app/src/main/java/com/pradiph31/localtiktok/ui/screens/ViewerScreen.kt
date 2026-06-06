@@ -35,6 +35,7 @@ fun ViewerScreen(
 ) {
     val allMediaItems by viewModel.allMediaItems.collectAsState()
     val likedItems by viewModel.likedItems.collectAsState()
+    val isMuted by viewModel.isMuted.collectAsState()
 
     val likedMedia = remember(allMediaItems, likedItems) {
         allMediaItems.filter { likedItems.contains(it.uniqueKey) }
@@ -68,6 +69,8 @@ fun ViewerScreen(
                         VideoPlayer(
                             videoUri = item.uri,
                             isVisible = isVisible,
+                            isMuted = isMuted,
+                            onToggleMute = { viewModel.toggleMute() },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
