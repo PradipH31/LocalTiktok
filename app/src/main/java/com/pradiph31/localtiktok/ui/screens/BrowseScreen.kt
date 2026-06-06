@@ -53,13 +53,16 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.video.VideoFrameDecoder
 import com.pradiph31.localtiktok.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 data class BrowseItem(
     val file: File,
     val isDirectory: Boolean,
     val isVideo: Boolean,
-    val isImage: Boolean
+    val isImage: Boolean,
+    val childCount: Int = 0
 ) {
     val name: String get() = file.name
     val path: String get() = file.absolutePath
@@ -88,21 +91,30 @@ fun BrowseScreen(viewModel: MainViewModel, onOpenFile: (String) -> Unit = {}) {
 
     // Load directory contents when path or sort changes
     LaunchedEffect(currentPath, sortOption) {
-        val dir = File(currentPath)
-        val files = dir.listFiles()?.toList() ?: emptyList()
-        val browseItems = files
-            .filter { !it.name.startsWith(".") }
-            .map { file ->
-                val ext = file.extension.lowercase()
-                BrowseItem(
-                    file = file,
-                    isDirectory = file.isDirectory,
-                    isVideo = ext in listOf("mp4", "mkv", "avi", "mov", "webm", "3gp", "flv", "wmv"),
-                    isImage = ext in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif")
-                )
+        items = withContext(Dispatchers.IO) {
+            try {
+                val dir = File(currentPath)
+                val files = dir.listFiles()?.toList() ?: emptyList()
+                val browseItems = files
+                    .filter { !it.name.startsWith(".") }
+                    .map { file ->
+                        val ext = file.extension.lowercase()
+                        val isDir = file.isDirectory
+                        BrowseItem(
+                            file = file,
+                            isDirectory = isDir,
+                            isVideo = !isDir && ext in listOf("mp4", "mkv", "avi", "mov", "webm", "3gp", "flv", "wmv"),
+                            isImage = !isDir && ext in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif"),
+                            childCount = if (isDir) {
+                                try { file.listFiles()?.size ?: 0 } catch (_: Exception) { 0 }
+                            } else 0
+                        )
+                    }
+                sortBrowseItems(browseItems, sortOption)
+            } catch (_: Exception) {
+                emptyList()
             }
-
-        items = sortBrowseItems(browseItems, sortOption)
+        }
     }
 
     val relativePath = currentPath.removePrefix(rootPath).ifEmpty { "/" }
@@ -190,7 +202,7 @@ fun BrowseScreen(viewModel: MainViewModel, onOpenFile: (String) -> Unit = {}) {
                 contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(items) { item ->
+                items(items, key = { it.path }) { item ->
                     BrowseItemRow(
                         item = item,
                         isLiked = likedItems.contains(item.path),
@@ -277,7 +289,8 @@ private fun BrowseItemRow(
                         model = ImageRequest.Builder(context)
                             .data(File(item.path))
                             .decoderFactory(VideoFrameDecoder.Factory())
-                            .size(96)
+                            .size(64)
+                            .memoryCacheKey("browse_thumb_${item.path}")
                             .build(),
                         contentDescription = item.name,
                         modifier = Modifier.fillMaxSize(),
@@ -294,7 +307,8 @@ private fun BrowseItemRow(
                     AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data(File(item.path))
-                            .size(96)
+                            .size(64)
+                            .memoryCacheKey("browse_thumb_${item.path}")
                             .build(),
                         contentDescription = item.name,
                         modifier = Modifier.fillMaxSize(),
@@ -323,9 +337,8 @@ private fun BrowseItemRow(
                 overflow = TextOverflow.Ellipsis
             )
             if (item.isDirectory) {
-                val childCount = item.file.listFiles()?.size ?: 0
                 Text(
-                    text = "$childCount items",
+                    text = "${item.childCount} items",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
