@@ -36,13 +36,23 @@ fun ViewerScreen(
     val allMediaItems by viewModel.allMediaItems.collectAsState()
     val likedItems by viewModel.likedItems.collectAsState()
     val isMuted by viewModel.isMuted.collectAsState()
+    val shuffledOrder by viewModel.shuffledLikedOrder.collectAsState()
 
-    val likedMedia = remember(allMediaItems, likedItems) {
-        allMediaItems.filter { likedItems.contains(it.uniqueKey) }
+    val isShuffleMode = itemKey == "__shuffle__"
+
+    val likedMedia = remember(allMediaItems, likedItems, shuffledOrder, isShuffleMode) {
+        val liked = allMediaItems.filter { likedItems.contains(it.uniqueKey) }
+        if (isShuffleMode && shuffledOrder.isNotEmpty()) {
+            val itemMap = liked.associateBy { it.uniqueKey }
+            shuffledOrder.mapNotNull { key -> itemMap[key] }
+        } else {
+            liked
+        }
     }
 
     val startIndex = remember(likedMedia, itemKey) {
-        likedMedia.indexOfFirst { it.uniqueKey == itemKey }.coerceAtLeast(0)
+        if (isShuffleMode) 0
+        else likedMedia.indexOfFirst { it.uniqueKey == itemKey }.coerceAtLeast(0)
     }
 
     Box(
@@ -110,7 +120,10 @@ fun ViewerScreen(
 
         // Back button
         IconButton(
-            onClick = onBack,
+            onClick = {
+                if (isShuffleMode) viewModel.clearShuffledOrder()
+                onBack()
+            },
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(top = 40.dp, start = 8.dp)

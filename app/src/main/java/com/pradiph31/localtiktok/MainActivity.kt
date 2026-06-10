@@ -160,6 +160,10 @@ fun MainApp(viewModel: MainViewModel) {
                     viewModel = viewModel,
                     onItemClick = { item ->
                         navController.navigate("viewer/${Uri.encode(item.uniqueKey)}")
+                    },
+                    onShufflePlay = {
+                        viewModel.shuffleLikedItems()
+                        navController.navigate("viewer/${Uri.encode("__shuffle__")}")
                     }
                 )
             }

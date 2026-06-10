@@ -22,8 +22,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -48,7 +50,8 @@ import com.pradiph31.localtiktok.viewmodel.MainViewModel
 @Composable
 fun LikedScreen(
     viewModel: MainViewModel,
-    onItemClick: (MediaItem) -> Unit
+    onItemClick: (MediaItem) -> Unit,
+    onShufflePlay: () -> Unit
 ) {
     val allMediaItems by viewModel.allMediaItems.collectAsState()
     val likedItems by viewModel.likedItems.collectAsState()
@@ -69,6 +72,16 @@ fun LikedScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                },
+                actions = {
+                    if (likedMedia.isNotEmpty()) {
+                        IconButton(onClick = onShufflePlay) {
+                            Icon(
+                                imageVector = Icons.Filled.Shuffle,
+                                contentDescription = "Shuffle play"
+                            )
+                        }
                     }
                 }
             )

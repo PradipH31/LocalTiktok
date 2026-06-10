@@ -64,6 +64,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isMuted.value = !_isMuted.value
     }
 
+    // Shuffled liked playback order
+    private val _shuffledLikedOrder = MutableStateFlow<List<String>>(emptyList())
+    val shuffledLikedOrder: StateFlow<List<String>> = _shuffledLikedOrder.asStateFlow()
+
+    fun shuffleLikedItems() {
+        _shuffledLikedOrder.value = _likedItems.value.toList().shuffled()
+    }
+
+    fun clearShuffledOrder() {
+        _shuffledLikedOrder.value = emptyList()
+    }
+
     // Browse screen state - persisted across navigation
     private val _browsePath = MutableStateFlow(Environment.getExternalStorageDirectory().absolutePath)
     val browsePath: StateFlow<String> = _browsePath.asStateFlow()
